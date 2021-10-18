@@ -1,28 +1,21 @@
-import asyncio
-
-import pyrcrack
-
-from rich.console import Console
-from rich.prompt import Prompt
+from src import manager
+from app import handlers
+from db import client
+from multiprocessing import Process
 
 
-async def scan_for_targets():
-    """Scan for targets, return json."""
-    console = Console()
-    console.clear()
-    console.show_cursor(False)
-    airmon = pyrcrack.AirmonNg()
+if __name__ == '__main__':
+    interface = 'wlan1'
+    #interface = manager.preparation_interface()
+    d11_probe_sniff = Process(target=handlers.start_sniffing, args=(interface, handlers.probe_packet_handler))
+    auth_packet_sniff = Process(target=handlers.start_sniffing, args=(interface, handlers.auth_packet_handler))
+    try:
+        client.check_tables(rebuild_db=False)  # With rebuild mode
+        d11_probe_sniff.start()
+        auth_packet_sniff.start()
 
-    interface = Prompt.ask(
-        'Select an interface',
-        choices=[a['interface'] for a in await airmon.interfaces])
-
-    async with airmon(interface) as mon:
-        async with pyrcrack.AirodumpNg() as pdump:
-            async for result in pdump(mon.monitor_interface):
-                console.clear()
-                console.print(result.table)
-                await asyncio.sleep(2)
-
-
-asyncio.run(scan_for_targets())
+    except KeyboardInterrupt:
+        print('Good bye!')
+    #except Exception as e:
+    #    t_alarmtext = f'wifi (main.py):\n {str(e)}'
+    #    manager.do_alarm(t_alarmtext)
