@@ -1,14 +1,20 @@
 import psycopg2
 from psycopg2 import Error
+from dotenv import load_dotenv
+import os
+
+from psycopg2.errorcodes import UNDEFINED_TABLE
 
 try:
     # Подключение к существующей базе данных
+    load_dotenv()
+
     conn = psycopg2.connect(
-        user="postgres",
-        password="postgres",
-        host="localhost",
-        port="5432",
-        database='pgdb'
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        host=os.getenv("DB_HOST"),
+        port=os.getenv("DB_PORT"),
+        database=os.getenv("DATABASE")
     )
 except (Exception, Error) as error:
     print("Ошибка при работе с PostgreSQL", error)
@@ -18,8 +24,12 @@ def check_tables(rebuild_db=False):
     print('Check_tables in bd...', end='')
     cursor = conn.cursor()
     if rebuild_db:
-        cursor.execute("DROP table probe_requests")
-        print('Drop table probe_requests...')
+        try:
+            cursor.execute("DROP table probe_requests")
+            conn.commit()
+        except psycopg2.errors.UndefinedTable:
+            print("Нечего ребилдить, таблица probe_requests не найдена.")
+            conn.commit()
     cursor.execute("SELECT version();")
     cursor.execute("SELECT tablename FROM pg_catalog.pg_tables;")
     tables = cursor.fetchall()
