@@ -1,12 +1,10 @@
 import os
 from sys import intern
-
 from dotenv import load_dotenv
 from netaddr import EUI, NotRegisteredError
 import requests
 import json
 import subprocess
-
 from db.client import check_tables
 
 
