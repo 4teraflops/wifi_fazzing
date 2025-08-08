@@ -2,7 +2,9 @@ import psycopg2
 from psycopg2 import Error
 from dotenv import load_dotenv
 import os
-from main import logger
+from loguru import logger
+
+logger.add(f'log/{__name__}.log', format='{time} {level} {message}', level='DEBUG', rotation='10 MB', compression='zip')
 
 
 try:
@@ -120,4 +122,3 @@ def insert_in_networks_tbl(bssid, essid, timestamp, anti_signal, channel):
     else:
         logger.info(f"Запись с bssid {bssid} уже существует. Вставка пропущена.")
         cursor.close()
-
